@@ -59,6 +59,14 @@ setopt INC_APPEND_HISTORY
 ##### OPTIONS END #####
 
 
+##### COMPLETION BEGIN #####
+
+# Try exact completions first, then fall back to case-insensitive matches.
+zstyle ':completion:*' matcher-list '' 'm:{a-zA-Z}={A-Za-z}'
+
+##### COMPLETION END #####
+
+
 ##### ALIASES BEGIN #####
 
 alias dotf='source ~/.zshrc'
