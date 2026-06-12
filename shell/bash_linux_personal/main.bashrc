@@ -188,7 +188,7 @@ alias deac='deactivate'
 alias py-init='python -m venv env && seba'
 py-new() { mkcd $1 && py-init; }
 alias pip-i='pip install -r requirements.txt'
-pip-add() { pip install $@ && printf "%s\n" $@ >> requirements.txt; }
+pip-add() { pip install "$@" && printf "%s\n" "$@" >> requirements.txt; }
 alias py-srv='python -m http.server --bind localhost'
 alias py-srv-public='echo -n "Your local IP address is: "; lip; py-srv'
 # py-run() {
