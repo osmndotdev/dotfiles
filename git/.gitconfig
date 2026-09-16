@@ -5,8 +5,7 @@
 	name = osmndotdev
 [core]
 	excludesFile = ~/aa/dotfiles/git/.gitignore_global
-	ignorecase = false
-	autocrlf = false
+	autocrlf = input
 	editor = micro
 [alias]
 	uncommit = reset --soft HEAD^

@@ -4,6 +4,9 @@
 ###		+--------------------------+
 #
 
+# This is a zsh file; shellcheck only understands bash and reports false positives.
+# shellcheck disable=all
+
 
 if [ -f "$DOTFILES_DIR/_private/shell/pre.zshrc" ]; then
 	source "$DOTFILES_DIR/_private/shell/pre.zshrc"
@@ -40,7 +43,7 @@ export PYTHONSTARTUP="$DOTFILES_DIR/python/pythonstartup.py"
 
 ### PATH Additions
 
-export PATH="$HOME/aa/programFiles/bin:/opt/homebrew/opt/gnu-tar/libexec/gnubin:$PATH"
+export PATH="$HOME/aa/programFiles/bin:$HOME/go/bin:/opt/homebrew/opt/gnu-tar/libexec/gnubin:$PATH"
 
 ### Shell Variables
 
@@ -63,6 +66,9 @@ setopt INC_APPEND_HISTORY
 
 
 ##### COMPLETION BEGIN #####
+
+# Load the completion system (also enables `compdef` for custom completers below)
+autoload -Uz compinit && compinit
 
 # Try exact completions first, then fall back to case-insensitive matches.
 zstyle ':completion:*' matcher-list '' 'm:{a-zA-Z}={A-Za-z}'
@@ -225,25 +231,6 @@ alias gsw="git switch"
 alias gswc="git switch -c" # --create
 alias gswd="git switch -d" # --detach
 alias gmff="git merge --ff-only"
-# Prune stale remote refs, then if the given branch's upstream is gone, rename it with a "merged/" prefix.
-gb-retire() {
-  local branch="$1"
-  if [[ -z "$branch" ]]; then
-    echo "Usage: gb-retire <branch>"
-    return 1
-  fi
-  if ! git show-ref --verify --quiet "refs/heads/$branch"; then
-    echo "Branch '$branch' does not exist."
-    return 1
-  fi
-  git remote prune origin
-  if [[ "$(git for-each-ref --format='%(upstream:track)' "refs/heads/$branch")" == "[gone]" ]]; then
-    git branch -m "$branch" "merged/$branch"
-    echo "Retired '$branch' → 'merged/$branch'."
-  else
-    echo "Branch '$branch' still exists in origin; not retiring."
-  fi
-}
 
 # https://superuser.com/a/1559424
 alias git-undo-chmod="git diff -p | grep -E '^(diff|old mode|new mode)' | sed -e 's/^old/NEW/;s/^new/old/;s/^NEW/new/' | git apply"
@@ -295,6 +282,13 @@ alias pab='pnpm approve-builds'
 
 alias ni='nice -n 15'
 
+alias alttab-restart='killall AltTab 2>/dev/null; while pgrep -x AltTab >/dev/null; do sleep 0.1; done; open /Applications/AltTab.app'
+
+##### ALIASES END #####
+
+
+##### FUNCTIONS BEGIN #####
+
 hoist() {
 	local dir base parent
 	dir=$PWD
@@ -322,7 +316,64 @@ hoist() {
 	rmdir -- "$dir" 2>/dev/null && print -r -- "Hoisted '$base' into '$parent'"
 }
 
-##### ALIASES END #####
+# Prune stale remote refs, then if the given branch's upstream is gone, rename it with a "merged/" prefix.
+gb-retire() {
+  local branch="$1"
+  if [[ -z "$branch" ]]; then
+    echo "Usage: gb-retire <branch>"
+    return 1
+  fi
+  if ! git show-ref --verify --quiet "refs/heads/$branch"; then
+    echo "Branch '$branch' does not exist."
+    return 1
+  fi
+  git remote prune origin
+  if [[ "$(git for-each-ref --format='%(upstream:track)' "refs/heads/$branch")" == "[gone]" ]]; then
+    git branch -m "$branch" "merged/$branch"
+    echo "Retired '$branch' → 'merged/$branch'."
+  else
+    echo "Branch '$branch' still exists in origin; not retiring."
+  fi
+}
+
+# Complete local branch names (excluding already-retired ones)
+_gb-retire() {
+  local -a branches
+  branches=(${(f)"$(git for-each-ref --format='%(refname:short)' refs/heads 2>/dev/null)"})
+  branches=(${branches:#merged/*})
+  _describe 'local branch' branches
+}
+compdef _gb-retire gb-retire
+
+# Open a new Claude Code (desktop app) session in a directory.
+#   cc                    -> current directory
+#   cc path/to/dir        -> that directory
+#   cc . "fix the tests"  -> with an initial prompt pre-filled
+cc() {
+  emulate -L zsh
+  local dir="${1:-.}" prompt="$2" url
+  dir="${dir:A}"                      # absolute, symlinks resolved
+  [[ -d "$dir" ]] || { print -u2 "cc: not a directory: $dir"; return 1 }
+  url="claude://code/new?folder=$(_cc_urlencode "$dir")"
+  [[ -n "$prompt" ]] && url+="&q=$(_cc_urlencode "$prompt")"
+  open "$url"
+}
+
+# Percent-encode like encodeURIComponent (byte-wise, UTF-8 safe).
+_cc_urlencode() {
+  emulate -L zsh
+  local LC_ALL=C s="$1" out="" c i
+  for (( i = 1; i <= ${#s}; i++ )); do
+    c="${s[i]}"
+    case "$c" in
+      [A-Za-z0-9._~-]) out+="$c" ;;
+      *) out+=$(printf '%%%02X' "'$c") ;;
+    esac
+  done
+  print -rn -- "$out"
+}
+
+##### FUNCTIONS END #####
 
 
 ##### PROMPT BEGIN #####
