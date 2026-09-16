@@ -1,8 +1,8 @@
 [init]
 	defaultBranch = main
 [user]
-	email = iamosmannyildiz@gmail.com
-	name = osmannyildiz
+	email = osman@osmn.dev
+	name = osmndotdev
 [core]
 	excludesFile = ~/aa/dotfiles/git/.gitignore_global
 	ignorecase = false

@@ -20,6 +20,9 @@ export PATH=$PATH:$ANDROID_HOME/emulator:$ANDROID_HOME/platform-tools
 # CodeQuick
 source $HOME/aa/code/shell/codequick/contrib/cq.zsh
 
+# Cursor Window Manager
+source $HOME/aa/code/_cq/reals/cq-uqZHV0KQ/contrib/cuwm.zsh
+
 ##### TODO END #####
 
 
@@ -116,6 +119,44 @@ alias cu.='cursor .'
 alias lip='ifconfig $LIP_INTERFACE | ggrep --color=never -Po "inet \K\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(?= netmask)"'
 #alias lip='ip -4 -o address show dev $LIP_INTERFACE | grep --color=never -Po "inet \K\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(?=/\d{1,2})"'
 
+portkill() {
+  local port="$1"
+
+  if [[ -z "$port" ]]; then
+    echo "usage: portkill <port>"
+    return 2
+  fi
+
+  local pids
+  pids=$(lsof -tiTCP:"$port" -sTCP:LISTEN)
+
+  if [[ -z "$pids" ]]; then
+    echo "No process listening on port $port"
+    return 1
+  fi
+
+  echo "$pids" | xargs kill
+}
+
+portkill-force() {
+  local port="$1"
+
+  if [[ -z "$port" ]]; then
+    echo "usage: portkill-force <port>"
+    return 2
+  fi
+
+  local pids
+  pids=$(lsof -tiTCP:"$port" -sTCP:LISTEN)
+
+  if [[ -z "$pids" ]]; then
+    echo "No process listening on port $port"
+    return 1
+  fi
+
+  echo "$pids" | xargs kill -9
+}
+
 # Git-related aliases
 alias gcl="git clone"
 alias gl="git log"
@@ -173,8 +214,10 @@ ${y}gco HEAD~1${w} → ${y}gswd HEAD~1${w}"
 alias gb="git branch"
 alias gbl="git branch --color=always | grep -v '^\s*merged\/'"
 alias gr="git remote"
+alias grl="git remote -v"
 alias gra="git remote add"
 alias grao="git remote add origin"
+alias grso="git remote set-url origin"
 alias gd="git diff"
 alias gdc="git diff --cached"
 alias gst="git stash"
@@ -182,6 +225,25 @@ alias gsw="git switch"
 alias gswc="git switch -c" # --create
 alias gswd="git switch -d" # --detach
 alias gmff="git merge --ff-only"
+# Prune stale remote refs, then if the given branch's upstream is gone, rename it with a "merged/" prefix.
+gb-retire() {
+  local branch="$1"
+  if [[ -z "$branch" ]]; then
+    echo "Usage: gb-retire <branch>"
+    return 1
+  fi
+  if ! git show-ref --verify --quiet "refs/heads/$branch"; then
+    echo "Branch '$branch' does not exist."
+    return 1
+  fi
+  git remote prune origin
+  if [[ "$(git for-each-ref --format='%(upstream:track)' "refs/heads/$branch")" == "[gone]" ]]; then
+    git branch -m "$branch" "merged/$branch"
+    echo "Retired '$branch' → 'merged/$branch'."
+  else
+    echo "Branch '$branch' still exists in origin; not retiring."
+  fi
+}
 
 # https://superuser.com/a/1559424
 alias git-undo-chmod="git diff -p | grep -E '^(diff|old mode|new mode)' | sed -e 's/^old/NEW/;s/^new/old/;s/^NEW/new/' | git apply"
@@ -205,6 +267,18 @@ alias py-srv-public='echo -n "Your local IP address is: "; lip; py-srv'
 # Java-related aliases
 alias jdk-list='/usr/libexec/java_home -V'
 jdk-use() { export JAVA_HOME=$(/usr/libexec/java_home -v $1); }
+
+# Caddy-related aliases
+alias caddy-status='brew services info caddy'
+alias caddy-start='brew services start caddy'
+alias caddy-stop='brew services stop caddy'
+alias caddy-restart='brew services restart caddy'
+# Seems like Homebrew's "reload" is just an alias for "restart"
+alias caddy-view='b $(brew --prefix)/etc/Caddyfile'
+alias caddy-edit='micro $(brew --prefix)/etc/Caddyfile'
+alias caddy-gedit='cot $(brew --prefix)/etc/Caddyfile'
+alias caddy-validate='caddy validate --config $(brew --prefix)/etc/Caddyfile --adapter caddyfile'
+alias caddy-fmt='caddy fmt --config $(brew --prefix)/etc/Caddyfile --overwrite'
 
 # Solana-related aliases
 alias scl='solana config set -ul' # Localnet

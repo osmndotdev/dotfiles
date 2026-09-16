@@ -24,3 +24,5 @@ matches:
     replace: "👍🏻"
   - trigger: ";ed"
     replace: "👎🏻"
+  - trigger: ";eh"
+    replace: "⏳"
