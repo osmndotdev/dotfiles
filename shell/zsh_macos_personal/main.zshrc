@@ -256,16 +256,18 @@ alias jdk-list='/usr/libexec/java_home -V'
 jdk-use() { export JAVA_HOME=$(/usr/libexec/java_home -v $1); }
 
 # Caddy-related aliases
-alias caddy-status='brew services info caddy'
-alias caddy-start='brew services start caddy'
-alias caddy-stop='brew services stop caddy'
-alias caddy-restart='brew services restart caddy'
+alias caddy-status='sudo brew services info caddy'
+alias caddy-start='sudo brew services start caddy'
+alias caddy-stop='sudo brew services stop caddy'
+alias caddy-restart='sudo brew services restart caddy'
 # Seems like Homebrew's "reload" is just an alias for "restart"
-alias caddy-view='b $(brew --prefix)/etc/Caddyfile'
-alias caddy-edit='micro $(brew --prefix)/etc/Caddyfile'
-alias caddy-gedit='cot $(brew --prefix)/etc/Caddyfile'
-alias caddy-validate='caddy validate --config $(brew --prefix)/etc/Caddyfile --adapter caddyfile'
-alias caddy-fmt='caddy fmt --config $(brew --prefix)/etc/Caddyfile --overwrite'
+alias caddy-path='echo $HOMEBREW_PREFIX/etc/Caddyfile'
+alias caddy-view='b $HOMEBREW_PREFIX/etc/Caddyfile'
+alias caddy-edit='micro $HOMEBREW_PREFIX/etc/Caddyfile'
+alias caddy-gedit='cot $HOMEBREW_PREFIX/etc/Caddyfile'
+alias caddy-validate='caddy validate --config $HOMEBREW_PREFIX/etc/Caddyfile --adapter caddyfile'
+alias caddy-fmt='caddy fmt --config $HOMEBREW_PREFIX/etc/Caddyfile --overwrite'
+alias caddy-reload='caddy reload --config $HOMEBREW_PREFIX/etc/Caddyfile'
 
 # Solana-related aliases
 alias scl='solana config set -ul' # Localnet
