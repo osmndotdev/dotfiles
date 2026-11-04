@@ -10,7 +10,7 @@ For the profile "bash_linux_personal", add this to the `.bashrc`:
 #####
 export DOTFILES_DIR="$HOME/aa/dotfiles"
 DOTFILES_SHELL_PROFILE="bash_linux_personal"
-source "$DOTFILES_DIR/shell/$DOTFILES_SHELL_PROFILE/main.bashrc"
+source "$DOTFILES_DIR/shell/profiles/$DOTFILES_SHELL_PROFILE/main.bashrc"
 #####
 ###
 #
@@ -24,7 +24,7 @@ For the profile "zsh_macos_personal", add this to the `.zshrc`:
 #####
 export DOTFILES_DIR="$HOME/aa/dotfiles"
 DOTFILES_SHELL_PROFILE="zsh_macos_personal"
-source "$DOTFILES_DIR/shell/$DOTFILES_SHELL_PROFILE/main.zshrc"
+source "$DOTFILES_DIR/shell/profiles/$DOTFILES_SHELL_PROFILE/main.zshrc"
 #####
 ###
 #
