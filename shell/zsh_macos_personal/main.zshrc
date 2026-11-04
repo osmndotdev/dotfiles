@@ -34,6 +34,7 @@ source $HOME/aa/code/_cq/reals/cq-uqZHV0KQ/contrib/cuwm.zsh
 ### Environment Variables
 
 export XDG_CONFIG_HOME="/Users/osman/.config"
+export XDG_DATA_DIRS="/opt/homebrew/share:$XDG_DATA_DIRS"
 
 export EDITOR=/opt/homebrew/bin/micro
 
@@ -96,6 +97,7 @@ csum-txt() { csum $1 > $1.sha256sum.txt; }
 
 alias mux='tmuxinator'
 alias mux-ls='ls -1 ~/.config/tmuxinator/'
+mux-gedit() { cot ~/.config/tmuxinator/$1.yaml; }
 
 alias httpie='http -v --follow'
 
@@ -384,7 +386,7 @@ PROMPT=$'
 🐸 %{\e[32m%}%n@%m%{\e[0m%} : %{\e[32m%}%~%{\e[0m%}
  %% '
 
-RPROMPT=$'%{\e[2m%}%*%{\e[0m%}'
+# RPROMPT=$'%{\e[2m%}%*%{\e[0m%}'
 
 ##### PROMPT END #####
 
