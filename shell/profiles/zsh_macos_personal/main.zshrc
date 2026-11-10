@@ -256,6 +256,7 @@ alias alttab-restart='killall AltTab 2>/dev/null; while pgrep -x AltTab >/dev/nu
 ##### FUNCTIONS BEGIN #####
 
 source "$DOTFILES_DIR/shell/functions/zsh/cc.zsh"
+source "$DOTFILES_DIR/shell/functions/zsh/ejectwho.zsh"
 source "$DOTFILES_DIR/shell/functions/zsh/gb-retire.zsh"
 source "$DOTFILES_DIR/shell/functions/zsh/hoist.zsh"
 source "$DOTFILES_DIR/shell/functions/zsh/portkill.zsh"
