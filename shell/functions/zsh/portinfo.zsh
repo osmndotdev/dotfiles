@@ -5,7 +5,9 @@
 #   - macOS (BSD ps/stat, pbcopy)
 #   - sudo rights (lsof runs as root to see every process)
 #   - fzf, only for --files
-# Config: none
+#   - CodeQuick, optional: names its projects in the directory line
+# Config:
+#   - Honors CodeQuick's CQ_ROOT (default ~/aa/code/_cq)
 
 # Show what is listening on a TCP port: process, bind address, directory, command and parents.
 #   portinfo 3000             -> compact summary
@@ -15,7 +17,7 @@ portinfo() {
   emulate -L zsh
 
   local port='' arg verbose=0 files_mode=0
-  local listeners line pid current parent label detail addresses cwd cwd_full cmd name age user cpu
+  local listeners line pid current parent label detail addresses cwd cwd_full cq_name cmd name age user cpu
   local width mapped selected raw entries
   local chain_text i j show_count parent_cmd
   local -a pids chain
@@ -204,6 +206,7 @@ portinfo() {
     age=$(_portinfo_ps "$pid" etime)
     cpu=$(_portinfo_ps "$pid" %cpu)
     [[ -n "$cwd" ]] && cwd=$(_portinfo_home "$cwd")
+    cq_name=$(_portinfo_cq_name "$cwd_full")
 
     addresses=$(print -r -- "$listeners" | awk -v wanted="$pid" '
       /^p[0-9]+$/ { current=substr($0,2); next }
@@ -218,7 +221,7 @@ portinfo() {
       print
       _portinfo_clip "PID $pid · ${name:-unknown} · ${user:-?} · ${age:-?} · CPU ${cpu:-?}%" "$width"
       _portinfo_clip "  Bind  ${addresses:-unknown}" "$width"
-      _portinfo_clip "  Dir   ${cwd:-unavailable}" "$width"
+      _portinfo_clip "  Dir   ${cwd:-unavailable}${cq_name:+ (CodeQuick: $cq_name)}" "$width"
       _portinfo_clip "  Args  ${cmd:-unavailable}" "$width"
       if (( ${#chain} > 1 )); then
         parent_cmd=$(_portinfo_ps "${chain[2]}" command)
@@ -255,7 +258,7 @@ portinfo() {
     print -r -- "Memory:    $(_portinfo_ps "$pid" %mem)% (RSS: $(_portinfo_ps "$pid" rss) KiB)"
     print -r -- "Terminal:  $(_portinfo_ps "$pid" tty)"
     print -r -- "PPID / PGID / session: $(_portinfo_ps "$pid" ppid) / $(_portinfo_ps "$pid" pgid) / $(_portinfo_ps "$pid" sess)"
-    print -r -- "Directory: ${cwd_full:-unavailable}"
+    print -r -- "Directory: ${cwd_full:-unavailable}${cq_name:+ (CodeQuick: $cq_name)}"
     print -r -- "Command:   ${cmd:-unavailable}"
     print -r -- "Executable (ps comm): $(_portinfo_ps "$pid" comm)"
     mapped=$(_portinfo_lsof_path "$pid" txt)
@@ -319,10 +322,32 @@ _portinfo_home() {
 
 # Inspect with the authenticated sudo credential. No repeated prompts in fzf.
 _portinfo_ps() {
-  sudo -n /bin/ps -ww -p "$1" -o "$2=" 2>/dev/null
+  emulate -L zsh
+  setopt extended_glob
+  local out
+  out=$(sudo -n /bin/ps -ww -p "$1" -o "$2=" 2>/dev/null) || return
+  # ps pads fields like ucomm and %cpu to a fixed column width.
+  print -r -- "${${out##[[:space:]]#}%%[[:space:]]#}"
 }
 
 _portinfo_lsof_path() {
   sudo -n lsof -nP -w -a -p "$1" -d "$2" -Fn 2>/dev/null |
     awk '/^n/ { print substr($0, 2); exit }'
+}
+
+# Print the CodeQuick project name for a directory inside $CQ_ROOT/reals, if any.
+# Silently prints nothing when CodeQuick isn't installed or the directory isn't one of its projects.
+_portinfo_cq_name() {
+  emulate -L zsh
+  local dir="$1" root="${${CQ_ROOT:-$HOME/aa/code/_cq}:A}" id link
+  [[ -n "$dir" && "$dir" == "$root/reals/"?* ]] || return 1
+  id="${${dir#"$root/reals/"}%%/*}"
+  # links/<name> -> ../reals/<id>
+  for link in "$root"/links/*(N@); do
+    if [[ "${link:A:t}" == "$id" ]]; then
+      print -r -- "${link:t}"
+      return 0
+    fi
+  done
+  return 1
 }
