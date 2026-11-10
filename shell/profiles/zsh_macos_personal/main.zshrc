@@ -259,6 +259,7 @@ source "$DOTFILES_DIR/shell/functions/zsh/cc.zsh"
 source "$DOTFILES_DIR/shell/functions/zsh/ejectwho.zsh"
 source "$DOTFILES_DIR/shell/functions/zsh/gb-retire.zsh"
 source "$DOTFILES_DIR/shell/functions/zsh/hoist.zsh"
+source "$DOTFILES_DIR/shell/functions/zsh/portinfo.zsh"
 source "$DOTFILES_DIR/shell/functions/zsh/portkill.zsh"
 
 ##### FUNCTIONS END #####
