@@ -6,8 +6,7 @@
 #   - sudo rights (lsof runs as root to see every process)
 #   - fzf, only for --files
 #   - CodeQuick, optional: names its projects in the directory line
-# Config:
-#   - Honors CodeQuick's CQ_ROOT (default ~/aa/code/_cq)
+# Config: none
 
 # Show what is listening on a TCP port: process, bind address, directory, command and parents.
 #   portinfo 3000             -> compact summary
@@ -339,8 +338,10 @@ _portinfo_lsof_path() {
 # Silently prints nothing when CodeQuick isn't installed or the directory isn't one of its projects.
 _portinfo_cq_name() {
   emulate -L zsh
-  local dir="$1" root="${${CQ_ROOT:-$HOME/aa/code/_cq}:A}" id
-  (( $+functions[cq] || $+commands[cq] )) || return 1
+  local dir="$1" root id
+  # cq refuses to run without CQ_ROOT, so treat an unset one as "no CodeQuick".
+  (( $+functions[cq] || $+commands[cq] )) && [[ -n "$CQ_ROOT" ]] || return 1
+  root="${CQ_ROOT:A}"
   [[ -n "$dir" && "$dir" == "$root/reals/"?* ]] || return 1
   # reals/<id>[/subdir...] -> <id>
   id="${${dir#"$root/reals/"}%%/*}"

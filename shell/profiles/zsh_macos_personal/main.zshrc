@@ -21,10 +21,11 @@ export ANDROID_HOME=$HOME/Library/Android/sdk
 export PATH=$PATH:$ANDROID_HOME/emulator:$ANDROID_HOME/platform-tools
 
 # CodeQuick
+export CQ_ROOT="$HOME/aa/code/_cq"
 source $HOME/aa/code/shell/codequick/contrib/cq.zsh
 
 # Cursor Window Manager
-source $HOME/aa/code/_cq/reals/cq-uqZHV0KQ/contrib/cuwm.zsh
+source "$CQ_ROOT/reals/cq-uqZHV0KQ/contrib/cuwm.zsh"
 
 ##### TODO END #####
 
