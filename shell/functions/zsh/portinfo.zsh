@@ -1,52 +1,24 @@
-# macOS port inspection for Zsh.
-# Usage:   portinfo 3000 [--verbose|-v] [--files]
-# Requires: macOS ps, lsof, sudo; fzf for --files.
+# This is a zsh file; shellcheck only understands bash and reports false positives.
+# shellcheck disable=all
 
-# One-line, terminal-width-limited presentation. Full values appear in -v mode.
-_portinfo_clip() {
-  emulate -L zsh
-  local value="$1" limit="${2:-80}"
-  value="${value//$'\n'/ }"
-  value="${value//$'\r'/ }"
-  (( limit < 12 )) && limit=12
-  if (( ${#value} <= limit )); then
-    print -r -- "$value"
-  else
-    print -r -- "${value[1,$((limit - 1))]}…"
-  fi
-}
+# Requires:
+#   - macOS (BSD ps/stat, pbcopy)
+#   - sudo rights (lsof runs as root to see every process)
+#   - fzf, only for --files
+# Config: none
 
-_portinfo_home() {
-  emulate -L zsh
-  local path="$1"
-  if [[ "$path" == "$HOME" ]]; then
-    print -r -- '~'
-  elif [[ "$path" == "$HOME/"* ]]; then
-    print -r -- "~/${path#"$HOME"/}"
-  else
-    print -r -- "$path"
-  fi
-}
-
-# Inspect with the authenticated sudo credential. No repeated prompts in fzf.
-_portinfo_ps() {
-  sudo -n /bin/ps -ww -p "$1" -o "$2=" 2>/dev/null
-}
-
-_portinfo_lsof_path() {
-  sudo -n lsof -nP -w -a -p "$1" -d "$2" -Fn 2>/dev/null |
-    awk '/^n/ { print substr($0, 2); exit }'
-}
-
+# Show what is listening on a TCP port: process, bind address, directory, command and parents.
+#   portinfo 3000             -> compact summary
+#   portinfo 3000 -v          -> full details and the whole parent chain
+#   portinfo 3000 --files     -> browse the listener's open files in fzf (add -v for more detail)
 portinfo() {
   emulate -L zsh
-  setopt local_options no_sh_word_split
 
   local port='' arg verbose=0 files_mode=0
   local listeners line pid current parent label detail addresses cwd cwd_full cmd name age user cpu
-  local width summary metrics started binary mapped fd_list selected raw entries
-  local chain_text prefix i j show_count parent_cmd
-  local -a pids chain fields
+  local width mapped selected raw entries
+  local chain_text i j show_count parent_cmd
+  local -a pids chain
   local -A unique_pids visited
 
   for arg in "$@"; do
@@ -317,4 +289,40 @@ portinfo() {
     print
     print -r -- "Tip: portinfo $port --files  (browse all open descriptors)"
   fi
+}
+
+# One-line, terminal-width-limited presentation. Full values appear in -v mode.
+_portinfo_clip() {
+  emulate -L zsh
+  local value="$1" limit="${2:-80}"
+  value="${value//$'\n'/ }"
+  value="${value//$'\r'/ }"
+  (( limit < 12 )) && limit=12
+  if (( ${#value} <= limit )); then
+    print -r -- "$value"
+  else
+    print -r -- "${value[1,$((limit - 1))]}…"
+  fi
+}
+
+_portinfo_home() {
+  emulate -L zsh
+  local dir="$1"
+  if [[ "$dir" == "$HOME" ]]; then
+    print -r -- '~'
+  elif [[ "$dir" == "$HOME/"* ]]; then
+    print -r -- "~/${dir#"$HOME"/}"
+  else
+    print -r -- "$dir"
+  fi
+}
+
+# Inspect with the authenticated sudo credential. No repeated prompts in fzf.
+_portinfo_ps() {
+  sudo -n /bin/ps -ww -p "$1" -o "$2=" 2>/dev/null
+}
+
+_portinfo_lsof_path() {
+  sudo -n lsof -nP -w -a -p "$1" -d "$2" -Fn 2>/dev/null |
+    awk '/^n/ { print substr($0, 2); exit }'
 }
