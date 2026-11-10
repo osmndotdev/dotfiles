@@ -127,44 +127,6 @@ alias cu.='cursor .'
 alias lip='ifconfig $LIP_INTERFACE | ggrep --color=never -Po "inet \K\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(?= netmask)"'
 #alias lip='ip -4 -o address show dev $LIP_INTERFACE | grep --color=never -Po "inet \K\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(?=/\d{1,2})"'
 
-portkill() {
-  local port="$1"
-
-  if [[ -z "$port" ]]; then
-    echo "usage: portkill <port>"
-    return 2
-  fi
-
-  local pids
-  pids=$(lsof -tiTCP:"$port" -sTCP:LISTEN)
-
-  if [[ -z "$pids" ]]; then
-    echo "No process listening on port $port"
-    return 1
-  fi
-
-  echo "$pids" | xargs kill
-}
-
-portkill-force() {
-  local port="$1"
-
-  if [[ -z "$port" ]]; then
-    echo "usage: portkill-force <port>"
-    return 2
-  fi
-
-  local pids
-  pids=$(lsof -tiTCP:"$port" -sTCP:LISTEN)
-
-  if [[ -z "$pids" ]]; then
-    echo "No process listening on port $port"
-    return 1
-  fi
-
-  echo "$pids" | xargs kill -9
-}
-
 # Git-related aliases
 alias gcl="git clone"
 alias gl="git log"
@@ -293,89 +255,10 @@ alias alttab-restart='killall AltTab 2>/dev/null; while pgrep -x AltTab >/dev/nu
 
 ##### FUNCTIONS BEGIN #####
 
-hoist() {
-	local dir base parent
-	dir=$PWD
-	base=${dir:t}
-	parent=${dir:h}
-
-	# Safety guard: refuse to run in or above $HOME
-	if [[ "$dir" == "/" || "$dir" == "$HOME" || "$dir" == /home* ]]; then
-		print -r -- "Refusing to hoist from protected directory: $dir"
-		return 1
-	fi
-	if [[ "$parent" == "/" || "$parent" == "$HOME" || "$parent" == /home* ]]; then
-		print -r -- "Refusing to hoist into protected directory: $parent"
-		return 1
-	fi
-
-	# Temporarily allow globs that match nothing
-	setopt localoptions null_glob
-
-	# Move visible and hidden files (except . and ..)
-	mv -- $dir/* $dir/.[!.]* $parent/ 2>/dev/null
-
-	# Step up and remove the old directory
-	cd "$parent" || return
-	rmdir -- "$dir" 2>/dev/null && print -r -- "Hoisted '$base' into '$parent'"
-}
-
-# Prune stale remote refs, then if the given branch's upstream is gone, rename it with a "merged/" prefix.
-gb-retire() {
-  local branch="$1"
-  if [[ -z "$branch" ]]; then
-    echo "Usage: gb-retire <branch>"
-    return 1
-  fi
-  if ! git show-ref --verify --quiet "refs/heads/$branch"; then
-    echo "Branch '$branch' does not exist."
-    return 1
-  fi
-  git remote prune origin
-  if [[ "$(git for-each-ref --format='%(upstream:track)' "refs/heads/$branch")" == "[gone]" ]]; then
-    git branch -m "$branch" "merged/$branch"
-    echo "Retired '$branch' → 'merged/$branch'."
-  else
-    echo "Branch '$branch' still exists in origin; not retiring."
-  fi
-}
-
-# Complete local branch names (excluding already-retired ones)
-_gb-retire() {
-  local -a branches
-  branches=(${(f)"$(git for-each-ref --format='%(refname:short)' refs/heads 2>/dev/null)"})
-  branches=(${branches:#merged/*})
-  _describe 'local branch' branches
-}
-compdef _gb-retire gb-retire
-
-# Open a new Claude Code (desktop app) session in a directory.
-#   cc                    -> current directory
-#   cc path/to/dir        -> that directory
-#   cc . "fix the tests"  -> with an initial prompt pre-filled
-cc() {
-  emulate -L zsh
-  local dir="${1:-.}" prompt="$2" url
-  dir="${dir:A}"                      # absolute, symlinks resolved
-  [[ -d "$dir" ]] || { print -u2 "cc: not a directory: $dir"; return 1 }
-  url="claude://code/new?folder=$(_cc_urlencode "$dir")"
-  [[ -n "$prompt" ]] && url+="&q=$(_cc_urlencode "$prompt")"
-  open "$url"
-}
-
-# Percent-encode like encodeURIComponent (byte-wise, UTF-8 safe).
-_cc_urlencode() {
-  emulate -L zsh
-  local LC_ALL=C s="$1" out="" c i
-  for (( i = 1; i <= ${#s}; i++ )); do
-    c="${s[i]}"
-    case "$c" in
-      [A-Za-z0-9._~-]) out+="$c" ;;
-      *) out+=$(printf '%%%02X' "'$c") ;;
-    esac
-  done
-  print -rn -- "$out"
-}
+source "$DOTFILES_DIR/shell/functions/zsh/cc.zsh"
+source "$DOTFILES_DIR/shell/functions/zsh/gb-retire.zsh"
+source "$DOTFILES_DIR/shell/functions/zsh/hoist.zsh"
+source "$DOTFILES_DIR/shell/functions/zsh/portkill.zsh"
 
 ##### FUNCTIONS END #####
 
