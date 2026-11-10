@@ -339,15 +339,10 @@ _portinfo_lsof_path() {
 # Silently prints nothing when CodeQuick isn't installed or the directory isn't one of its projects.
 _portinfo_cq_name() {
   emulate -L zsh
-  local dir="$1" root="${${CQ_ROOT:-$HOME/aa/code/_cq}:A}" id link
+  local dir="$1" root="${${CQ_ROOT:-$HOME/aa/code/_cq}:A}" id
+  (( $+functions[cq] || $+commands[cq] )) || return 1
   [[ -n "$dir" && "$dir" == "$root/reals/"?* ]] || return 1
+  # reals/<id>[/subdir...] -> <id>
   id="${${dir#"$root/reals/"}%%/*}"
-  # links/<name> -> ../reals/<id>
-  for link in "$root"/links/*(N@); do
-    if [[ "${link:A:t}" == "$id" ]]; then
-      print -r -- "${link:t}"
-      return 0
-    fi
-  done
-  return 1
+  cq name "$id" 2>/dev/null
 }
